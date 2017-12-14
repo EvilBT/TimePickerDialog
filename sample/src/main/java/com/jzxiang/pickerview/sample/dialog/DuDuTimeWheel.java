@@ -1,4 +1,4 @@
-package com.jzxiang.pickerview;
+package com.jzxiang.pickerview.sample.dialog;
 
 import android.content.Context;
 import android.view.View;
@@ -6,21 +6,30 @@ import android.view.View;
 import com.jzxiang.pickerview.adapters.NumericWheelAdapter;
 import com.jzxiang.pickerview.config.PickerConfig;
 import com.jzxiang.pickerview.data.source.TimeRepository;
+import com.jzxiang.pickerview.sample.adapter.DuDuWheelAdapter;
+import com.jzxiang.pickerview.sample.util.TimeConstants;
+import com.jzxiang.pickerview.sample.util.TimeUtils;
 import com.jzxiang.pickerview.utils.PickerContants;
 import com.jzxiang.pickerview.utils.Utils;
 import com.jzxiang.pickerview.wheel.OnWheelChangedListener;
 import com.jzxiang.pickerview.wheel.WheelView;
 
 import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by jzxiang on 16/4/20.
  */
-public class TimeWheel {
+public class DuDuTimeWheel {
     Context mContext;
 
     WheelView year, month, day, hour, minute;
     NumericWheelAdapter mYearAdapter, mMonthAdapter, mDayAdapter, mHourAdapter, mMinuteAdapter;
+
+    DuDuWheelAdapter mDuDuDayAdapter;
+    Date currentDate;
+    int minDay;
+    int maxDay;
 
     PickerConfig mPickerConfig;
     TimeRepository mRepository;
@@ -33,7 +42,8 @@ public class TimeWheel {
     OnWheelChangedListener monthListener = new OnWheelChangedListener() {
         @Override
         public void onChanged(WheelView wheel, int oldValue, int newValue) {
-            updateDays();
+            //updateDays();
+            updateDuDuDays();
         }
     };
     OnWheelChangedListener dayListener = new OnWheelChangedListener() {
@@ -49,9 +59,11 @@ public class TimeWheel {
         }
     };
 
-    public TimeWheel(View view, PickerConfig pickerConfig) {
+    public DuDuTimeWheel(View view, PickerConfig pickerConfig, Date currentDate, int minDay, int maxDay) {
         mPickerConfig = pickerConfig;
-
+        this.currentDate = currentDate;
+        this.minDay = minDay;
+        this.maxDay = maxDay;
         mRepository = new TimeRepository(pickerConfig);
         mContext = view.getContext();
         initialize(view);
@@ -61,18 +73,19 @@ public class TimeWheel {
         initView(view);
         initYear();
         initMonth();
-        initDay();
+        initDuDuDay();
+        //initDay();
         initHour();
         initMinute();
     }
 
 
     void initView(View view) {
-        year = (WheelView) view.findViewById(R.id.year);
-        month = (WheelView) view.findViewById(R.id.month);
-        day = (WheelView) view.findViewById(R.id.day);
-        hour = (WheelView) view.findViewById(R.id.hour);
-        minute = (WheelView) view.findViewById(R.id.minute);
+        year = (WheelView) view.findViewById(com.jzxiang.pickerview.R.id.year);
+        month = (WheelView) view.findViewById(com.jzxiang.pickerview.R.id.month);
+        day = (WheelView) view.findViewById(com.jzxiang.pickerview.R.id.day);
+        hour = (WheelView) view.findViewById(com.jzxiang.pickerview.R.id.hour);
+        minute = (WheelView) view.findViewById(com.jzxiang.pickerview.R.id.minute);
 
         switch (mPickerConfig.mType) {
             case ALL:
@@ -128,6 +141,13 @@ public class TimeWheel {
         month.setCyclic(mPickerConfig.cyclic);
     }
 
+    void initDuDuDay() {
+        updateDuDuDays();
+
+        day.setCurrentItem(minDay);
+        day.setCyclic(mPickerConfig.cyclic);
+    }
+
     void initDay() {
         updateDays();
         int curYear = getCurrentYear();
@@ -176,6 +196,19 @@ public class TimeWheel {
         if (mRepository.isMinYear(curYear)) {
             month.setCurrentItem(0, false);
         }
+    }
+
+    void updateDuDuDays() {
+        if (day.getVisibility() == View.GONE)
+            return;
+
+        mDuDuDayAdapter = new DuDuWheelAdapter(mContext);
+        mDuDuDayAdapter.setCurrentDate(currentDate);
+        mDuDuDayAdapter.setMinDay(minDay);
+        mDuDuDayAdapter.setMaxDay(maxDay);
+        day.setViewAdapter(mDuDuDayAdapter);
+
+        day.setCurrentItem(minDay, true);
     }
 
     void updateDays() {
@@ -257,6 +290,22 @@ public class TimeWheel {
         int curYear = getCurrentYear();
         int curMonth = getCurrentMonth();
         return day.getCurrentItem() + mRepository.getMinDay(curYear, curMonth);
+    }
+
+    private static final long DAY_TIME = 24*60*60*1000L;
+
+    public long getDuDuCurrentTime() {
+        int item = day.getCurrentItem();
+        Date date = TimeUtils.getDate(currentDate,item - minDay, TimeConstants.DAY);
+        long time = date.getTime();
+
+        time = time / DAY_TIME * DAY_TIME;
+
+        int hourTime = hour.getCurrentItem();
+        int minTime = minute.getCurrentItem();
+
+        time = time + hourTime * 60 * 60 * 1000 + minTime * 60 * 1000;
+        return time;
     }
 
     public int getCurrentHour() {

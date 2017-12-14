@@ -8,15 +8,21 @@ import android.widget.TextView;
 import com.jzxiang.pickerview.TimePickerDialog;
 import com.jzxiang.pickerview.data.Type;
 import com.jzxiang.pickerview.listener.OnDateSetListener;
+import com.jzxiang.pickerview.sample.dialog.DuDuOnDateSetListener;
+import com.jzxiang.pickerview.sample.dialog.DuDuTimePickerDialog;
+import com.jzxiang.pickerview.sample.util.TimeConstants;
+import com.jzxiang.pickerview.sample.util.TimeUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnDateSetListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnDateSetListener, DuDuOnDateSetListener {
     TimePickerDialog mDialogAll;
     TimePickerDialog mDialogYearMonth;
     TimePickerDialog mDialogYearMonthDay;
     TimePickerDialog mDialogMonthDayHourMinute;
+    TimePickerDialog mDialogDayHourMinute;
     TimePickerDialog mDialogHourMinute;
     TextView mTvTime;
 
@@ -68,6 +74,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setType(Type.MONTH_DAY_HOUR_MIN)
                 .setCallBack(this)
                 .build();
+        mDialogDayHourMinute = new DuDuTimePickerDialog.Builder()
+                .setCyclic(false)
+                .setType(Type.DAY_HOUR_MIN)
+                .setMinDay(3)
+                .setMaxDay(20)
+                .setCurrentDate(new Date(System.currentTimeMillis()))
+                //.setCallBack(this)
+                .setListener(this)
+                .build();
         mDialogHourMinute = new TimePickerDialog.Builder()
                 .setType(Type.HOURS_MINS)
                 .setCallBack(this)
@@ -79,9 +94,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_year_month_day).setOnClickListener(this);
         findViewById(R.id.btn_year_month).setOnClickListener(this);
         findViewById(R.id.btn_month_day_hour_minute).setOnClickListener(this);
+        findViewById(R.id.btn_day_hour_minute).setOnClickListener(this);
         findViewById(R.id.btn_hour_minute).setOnClickListener(this);
 
-        mTvTime = (TextView) findViewById(R.id.tv_time);
+        mTvTime = findViewById(R.id.tv_time);
+
+        mTvTime.setText(TimeUtils.getChineseWeek("2017-12-14",new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())));
+
+        Date date;
+        date = TimeUtils.getDate(System.currentTimeMillis(), 31, TimeConstants.DAY);
+
+        mTvTime.setText(TimeUtils.date2String(date,new SimpleDateFormat("MMMd日 EEE", Locale.getDefault())));
     }
 
     @Override
@@ -98,6 +121,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_month_day_hour_minute:
                 mDialogMonthDayHourMinute.show(getSupportFragmentManager(), "month_day_hour_minute");
+                break;
+            case R.id.btn_day_hour_minute:
+                mDialogDayHourMinute.show(getSupportFragmentManager(), "day_hour_minute");
                 break;
             case R.id.btn_hour_minute:
                 mDialogHourMinute.show(getSupportFragmentManager(), "hour_minute");
@@ -117,4 +143,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return sf.format(d);
     }
 
+    @Override
+    public void onDataSet(DuDuTimePickerDialog dialog, long time) {
+        // 选择回调
+        mTvTime.setText(TimeUtils.date2String(new Date(time),new SimpleDateFormat("EEEE yyyy-MM-dd HH:mm",Locale.getDefault())));
+    }
 }
